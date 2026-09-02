@@ -95,6 +95,8 @@ abstract class BaseTaskbarService : Service(), TaskbarHost {
 
         calendarWeatherRepository.start()
 
+        qsViewModel.onAttach()
+
         panelController = TaskbarPanelController(
             context = this,
             vm = vm,

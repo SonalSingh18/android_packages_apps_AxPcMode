@@ -174,12 +174,16 @@ class QuickSettingsViewModel @Inject constructor(
         return min + (max - min) * linear
     }
 
+    fun onAttach() {
+        repository.attach()
+    }
+
     fun onCleanup() {
-        repository.onDestroy()
+        repository.detach()
     }
 
     override fun onCleared() {
         super.onCleared()
-        repository.onDestroy()
+        repository.detach()
     }
 }

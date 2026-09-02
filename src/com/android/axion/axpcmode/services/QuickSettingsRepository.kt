@@ -99,6 +99,9 @@ class QuickSettingsRepository(
     private var userSlidingVolume = false
     private var volumeDebounceJob: Job? = null
 
+    private var attachCount = 0
+    private var started = false
+
     private val volumeReceiver = object : BroadcastReceiver() {
         override fun onReceive(ctx: Context, intent: Intent) {
             if (intent.action != "android.media.VOLUME_CHANGED_ACTION") return
@@ -110,7 +113,22 @@ class QuickSettingsRepository(
         }
     }
 
-    init {
+    /**
+     * Starts listening for state, if nobody is listening yet.
+     *
+     * This repository is a process wide singleton shared by the primary and secondary taskbars,
+     * while the taskbars themselves are created and destroyed constantly (display changes, PC mode
+     * toggles). Tying the subscriptions to a single taskbar's lifetime meant the first teardown
+     * unregistered the platform callback for good: tile taps kept working, because toggling is a
+     * plain binder call, but no state ever came back, so every tile stayed frozen at whatever it
+     * last showed. Reference count the listeners instead so they come back with the next taskbar.
+     */
+    @Synchronized
+    fun attach() {
+        attachCount++
+        if (started) return
+        started = true
+
         _maxVolume.value = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC).toFloat()
         _volume.value = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC).toFloat()
         _brightnessInfo.value = context.display?.brightnessInfo
@@ -121,8 +139,24 @@ class QuickSettingsRepository(
             Context.RECEIVER_NOT_EXPORTED,
         )
 
+        savedSpecs = platformRepo.getSavedTileSpecs()
         refreshTiles()
         collectTileStates()
+    }
+
+    /** Stops listening once the last taskbar hosting the panel is gone. */
+    @Synchronized
+    fun detach() {
+        if (attachCount > 0) attachCount--
+        if (attachCount > 0 || !started) return
+        started = false
+
+        volumeDebounceJob?.cancel()
+        userSlidingVolume = false
+        tileCollectorJobs.forEach { it.cancel() }
+        tileCollectorJobs.clear()
+        runCatching { context.unregisterReceiver(volumeReceiver) }
+        platformRepo.disconnect()
     }
 
     private fun refreshTilesFromState() {
@@ -199,12 +233,6 @@ class QuickSettingsRepository(
             delay(300)
             userSlidingVolume = false
         }
-    }
-
-    fun onDestroy() {
-        volumeDebounceJob?.cancel()
-        context.unregisterReceiver(volumeReceiver)
-        platformRepo.disconnect()
     }
 
     companion object {
