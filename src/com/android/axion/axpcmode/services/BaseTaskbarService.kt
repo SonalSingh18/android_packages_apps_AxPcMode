@@ -246,7 +246,7 @@ abstract class BaseTaskbarService : Service(), TaskbarHost {
         notificationListener.mediaRepository = mediaRepository
         notificationListener.registerAsSystemService(
             applicationContext,
-            AxNotificationListener.componentName,
+            AxNotificationListener.componentName(applicationContext),
             UserHandle.USER_ALL,
         )
     }

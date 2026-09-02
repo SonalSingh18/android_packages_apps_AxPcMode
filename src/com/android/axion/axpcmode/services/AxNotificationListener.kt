@@ -2,6 +2,7 @@ package com.android.axion.axpcmode.services
 
 import android.app.Notification
 import android.content.ComponentName
+import android.content.Context
 import android.media.session.MediaSession
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
@@ -53,9 +54,7 @@ class AxNotificationListener : NotificationListenerService() {
     }
 
     companion object {
-        val componentName: ComponentName by lazy {
-            val javaClass = AxNotificationListener::class.java
-            ComponentName(javaClass.getPackage().name, javaClass.name)
-        }
+        fun componentName(context: Context): ComponentName =
+            ComponentName(context, AxNotificationListener::class.java)
     }
 }
