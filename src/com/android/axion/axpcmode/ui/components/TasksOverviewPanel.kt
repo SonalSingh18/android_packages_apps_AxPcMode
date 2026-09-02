@@ -16,11 +16,11 @@
 
 package com.android.axion.axpcmode.ui.components
 
-import android.app.ActivityTaskManager
 import android.app.WallpaperManager
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.util.Log
+import android.window.TaskSnapshotManager
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -91,11 +91,14 @@ fun TasksOverviewPanel(
 
     val taskSnapshots = remember { mutableStateMapOf<Int, Bitmap?>() }
     LaunchedEffect(runningTasks) {
-        val atm = ActivityTaskManager.getService()
+        val snapshots = TaskSnapshotManager.getInstance()
         runningTasks.forEach { task ->
             if (task.taskId != -1 && !taskSnapshots.containsKey(task.taskId)) {
                 try {
-                    val snapshot = atm.getTaskSnapshot(task.taskId, false)
+                    val snapshot = snapshots.getTaskSnapshot(
+                        task.taskId,
+                        TaskSnapshotManager.convertRetrieveFlag(false),
+                    )
                     val bitmap =
                         snapshot?.let { s ->
                             try {

@@ -16,9 +16,9 @@
 
 package com.android.axion.axpcmode.ui.components.taskbar
 
-import android.app.ActivityTaskManager
 import android.graphics.Bitmap
 import android.hardware.HardwareBuffer
+import android.window.TaskSnapshotManager
 import androidx.compose.runtime.*
 import com.android.axion.axpcmode.utils.AppInfo
 import kotlinx.coroutines.CoroutineScope
@@ -79,8 +79,10 @@ val LocalTaskPeekState = staticCompositionLocalOf { TaskPeekState() }
 
 suspend fun fetchTaskThumbnail(taskId: Int): Bitmap? = withContext(Dispatchers.IO) {
     try {
-        val snapshot = ActivityTaskManager.getService().getTaskSnapshot(taskId, true)
-            ?: return@withContext null
+        val snapshot = TaskSnapshotManager.getInstance().getTaskSnapshot(
+            taskId,
+            TaskSnapshotManager.convertRetrieveFlag(true),
+        ) ?: return@withContext null
         val buffer = snapshot.hardwareBuffer ?: return@withContext null
         val bitmap = Bitmap.wrapHardwareBuffer(buffer, snapshot.colorSpace)
         buffer.close()
