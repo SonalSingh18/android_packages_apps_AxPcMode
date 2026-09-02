@@ -49,7 +49,7 @@ android_app {
         "androidx.lifecycle_lifecycle-runtime-compose",
         "kotlinx-coroutines-core",
         "kotlin-parcelize-runtime",
-        "gson-prebuilt-jar-2.9.1",
+        "gson",
         "ax_compose",
         "ax_platform_hooks",
         "PlatformComposeSceneTransitionLayout",
