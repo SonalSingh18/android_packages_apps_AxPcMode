@@ -58,6 +58,7 @@ abstract class BaseTaskbarService : Service(), TaskbarHost {
 
     protected var autoHideJob: Job? = null
     protected var cleaned = false
+    private var created = false
 
     protected val contextMenuState = ContextMenuState()
     protected val peekState = TaskPeekState()
@@ -119,11 +120,23 @@ abstract class BaseTaskbarService : Service(), TaskbarHost {
         setupDensityListener(targetDisplayId)
 
         notificationHelper.createNotificationChannel()
+        created = true
         Log.d(tag, "$tag created on display $targetDisplayId")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        when (intent?.action) {
+        if (intent?.action == null) {
+            // START_STICKY re-delivery after the process was killed: restore the overlay,
+            // otherwise the taskbar stays gone until PC mode is restarted.
+            if (created) {
+                cleaned = false
+                startForeground(notificationId, notificationHelper.createForegroundNotification())
+                showTaskbarOverlay()
+                Log.d(tag, "$tag restarted without an intent, taskbar restored")
+            }
+            return START_STICKY
+        }
+        when (intent.action) {
             startAction -> {
                 if (cleaned) {
                     cleaned = false

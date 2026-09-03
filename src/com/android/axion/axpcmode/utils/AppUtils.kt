@@ -217,7 +217,9 @@ object AppUtils {
 
     fun switchToTask(context: Context, taskId: Int) {
         val am = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        am.moveTaskToFront(taskId, ActivityManager.MOVE_TASK_WITH_HOME)
+        // No MOVE_TASK_WITH_HOME: the PC mode desktop is the home surface here, pulling the
+        // system home activity in behind the task leaves it on top once tasks are cleared.
+        am.moveTaskToFront(taskId, 0)
     }
 }
 

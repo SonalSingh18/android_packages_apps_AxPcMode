@@ -18,11 +18,14 @@ package com.android.axion.axpcmode.activities
 
 import android.R
 import android.app.ActivityManager
+import android.app.ActivityOptions
+import android.app.ActivityTaskManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
+import android.view.Display
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -32,12 +35,18 @@ import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.android.axion.axpcmode.services.SecondaryTaskbarService
+import com.android.axion.axpcmode.services.TaskbarService
 import com.android.axion.axpcmode.ui.components.TasksOverviewPanel
 import com.android.axion.axpcmode.ui.theme.AxPcModeTheme
 import com.android.axion.axpcmode.utils.AppInfo
 import com.android.axion.axpcmode.utils.AppUtils
+import com.android.axion.axpcmode.utils.TaskbarConstants
 
 class TasksOverviewActivity : ComponentActivity() {
+
+    private val targetDisplayId: Int
+        get() = display?.displayId ?: Display.DEFAULT_DISPLAY
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -93,10 +102,10 @@ class TasksOverviewActivity : ComponentActivity() {
                         }
                     },
                     onClearAllTasks = {
-                        clearAllTasks(runningTasks)
-                        finish()
+                        clearAllTasks(loadRunningTasks())
+                        dismissOverview()
                     },
-                    onDismiss = { finish() },
+                    onDismiss = { dismissOverview() },
                     modifier = Modifier.fillMaxSize(),
                 )
             }
@@ -104,13 +113,11 @@ class TasksOverviewActivity : ComponentActivity() {
     }
 
     private fun loadRunningTasks(): List<AppInfo> {
-        val am = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
         val pm = packageManager
         val tasks = mutableListOf<AppInfo>()
 
         try {
-            val targetDisplayId = display?.displayId ?: android.view.Display.DEFAULT_DISPLAY
-            val atm = android.app.ActivityTaskManager.getService()
+            val atm = ActivityTaskManager.getService()
             val runningTasks = atm.getTasks(20, false, false, targetDisplayId)
 
             runningTasks.forEach { taskInfo ->
@@ -151,55 +158,93 @@ class TasksOverviewActivity : ComponentActivity() {
     }
 
     private fun bringTaskToFront(appInfo: AppInfo) {
-        val displayId = display?.displayId ?: android.view.Display.DEFAULT_DISPLAY
         if (appInfo.taskId != -1) {
             try {
                 val am = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-                am.moveTaskToFront(appInfo.taskId, ActivityManager.MOVE_TASK_WITH_HOME)
+                am.moveTaskToFront(appInfo.taskId, 0)
             } catch (e: Exception) {
-                AppUtils.launchApp(this, appInfo.packageName, appInfo.className, displayId)
+                AppUtils.launchApp(this, appInfo.packageName, appInfo.className, targetDisplayId)
             }
         } else {
-            AppUtils.launchApp(this, appInfo.packageName, appInfo.className, displayId)
+            AppUtils.launchApp(this, appInfo.packageName, appInfo.className, targetDisplayId)
         }
     }
 
     private fun closeTask(appInfo: AppInfo) {
-        try {
-            val am = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-            am.forceStopPackage(appInfo.packageName)
-        } catch (e: Exception) {
-            Log.e("TasksOverviewActivity", "Failed to close task ${appInfo.packageName}", e)
-        }
+        removeTask(appInfo.taskId, appInfo.packageName)
     }
 
     private fun clearAllTasks(tasks: List<AppInfo>) {
-        val am = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        tasks.forEach { task ->
-            try {
-                am.forceStopPackage(task.packageName)
-            } catch (e: Exception) {
-                Log.e("TasksOverviewActivity", "Failed to force stop ${task.packageName}", e)
-            }
+        tasks.forEach { task -> removeTask(task.taskId, task.packageName) }
+    }
+
+    /**
+     * Removes a single recents entry. Only the task is dropped - force stopping the whole
+     * package would also mark it stopped and tear down anything else running under it.
+     */
+    private fun removeTask(taskId: Int, packageName: String) {
+        if (taskId <= 0) return
+        try {
+            ActivityTaskManager.getService().removeTask(taskId)
+        } catch (e: Exception) {
+            Log.e("TasksOverviewActivity", "Failed to remove task $taskId ($packageName)", e)
         }
+    }
+
+    /**
+     * Closes the overview. Once the last task on this display is gone the desktop has to be
+     * pulled back to the front explicitly, otherwise the system home activity becomes the top
+     * task and the PC mode desktop plus its taskbar are left hidden behind it.
+     */
+    private fun dismissOverview() {
+        if (loadRunningTasks().isEmpty()) {
+            showDesktop()
+        }
+        revealTaskbar()
+        finish()
     }
 
     private fun showDesktop() {
         try {
-            val intent = Intent(this, PcModeLauncherActivity::class.java)
+            val activityClass =
+                if (targetDisplayId != Display.DEFAULT_DISPLAY)
+                    SecondaryPcModeLauncherActivity::class.java
+                else PcModeLauncherActivity::class.java
+            val intent = Intent(this, activityClass)
             intent.addFlags(
                 Intent.FLAG_ACTIVITY_NEW_TASK or
                     Intent.FLAG_ACTIVITY_CLEAR_TOP or
                     Intent.FLAG_ACTIVITY_SINGLE_TOP
             )
-            startActivity(intent)
+            startActivity(intent, displayOptions())
         } catch (e: Exception) {
             Log.e("TasksOverviewActivity", "Failed to show desktop", e)
         }
     }
 
+    /** The taskbar is hidden while the overview is open, so ask it to come back. */
+    private fun revealTaskbar() {
+        try {
+            val serviceClass =
+                if (targetDisplayId != Display.DEFAULT_DISPLAY)
+                    SecondaryTaskbarService::class.java
+                else TaskbarService::class.java
+            val intent = Intent(this, serviceClass).apply {
+                action = TaskbarConstants.ACTION_SHOW
+            }
+            startService(intent)
+        } catch (e: Exception) {
+            Log.e("TasksOverviewActivity", "Failed to reveal taskbar", e)
+        }
+    }
+
+    private fun displayOptions(): android.os.Bundle? {
+        if (targetDisplayId == Display.DEFAULT_DISPLAY) return null
+        return ActivityOptions.makeBasic().apply { launchDisplayId = targetDisplayId }.toBundle()
+    }
+
     override fun onBackPressed() {
         super.onBackPressed()
-        finish()
+        dismissOverview()
     }
 }

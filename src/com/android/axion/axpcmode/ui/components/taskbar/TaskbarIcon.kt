@@ -1,6 +1,7 @@
 package com.android.axion.axpcmode.ui.components.taskbar
 
 import android.app.ActivityManager
+import android.app.ActivityTaskManager
 import android.content.Context
 import android.content.Intent
 import android.util.Log
@@ -118,10 +119,14 @@ fun TaskbarIcon(
                     add(
                         ContextMenuAction(label = strClose, icon = Icons.Filled.Close) {
                             try {
-                                val am =
-                                    launcherContext.getSystemService(Context.ACTIVITY_SERVICE)
-                                        as ActivityManager
-                                am.forceStopPackage(app.packageName)
+                                if (app.taskId > 0) {
+                                    ActivityTaskManager.getService().removeTask(app.taskId)
+                                } else {
+                                    val am =
+                                        launcherContext.getSystemService(Context.ACTIVITY_SERVICE)
+                                            as ActivityManager
+                                    am.forceStopPackage(app.packageName)
+                                }
                             } catch (e: Exception) {
                                 Log.e("Taskbar", "Failed to close app", e)
                             }
