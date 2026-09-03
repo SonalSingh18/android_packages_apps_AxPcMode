@@ -60,6 +60,9 @@ import com.android.axion.axpcmode.ui.QuickSettingsViewModel
 import com.android.axion.axpcmode.ui.components.qs.*
 import com.android.axion.axpcmode.ui.tiles.TileIconMapping
 
+/** Footprint of the panel, trailing padding included; the overlay window is sized around it. */
+val QuickSettingsPanelWidth = 420.dp
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun QuickSettingsPanel(viewModel: QuickSettingsViewModel, modifier: Modifier = Modifier, targetDisplayId: Int = Display.DEFAULT_DISPLAY) {
@@ -77,7 +80,7 @@ fun QuickSettingsPanel(viewModel: QuickSettingsViewModel, modifier: Modifier = M
     Surface(
         modifier =
             modifier
-                .width(420.dp)
+                .width(QuickSettingsPanelWidth)
                 .heightIn(max = safeMaxHeight)
                 .padding(top = 12.dp, bottom = 12.dp, end = 12.dp),
         shape = MaterialTheme.shapes.extraLarge,

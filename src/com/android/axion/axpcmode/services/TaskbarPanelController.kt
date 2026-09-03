@@ -24,6 +24,8 @@ import android.view.Gravity
 import android.view.WindowManager
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.unit.dp
+import com.android.axion.axpcmode.ui.MediaPlayerOverlayWidth
+import com.android.axion.axpcmode.ui.NotificationOverlayWidth
 import com.android.axion.axpcmode.ui.OverlayContextMenu
 import com.android.axion.axpcmode.ui.OverlayMediaPlayer
 import com.android.axion.axpcmode.ui.OverlayNotificationPanel
@@ -32,6 +34,7 @@ import com.android.axion.axpcmode.ui.OverlayQuickSettingsEditor
 import com.android.axion.axpcmode.ui.OverlayStartMenu
 import com.android.axion.axpcmode.ui.PanelOverlayManager
 import com.android.axion.axpcmode.ui.PcModeLauncherViewModel
+import com.android.axion.axpcmode.ui.QuickSettingsOverlayWidth
 import com.android.axion.axpcmode.ui.QuickSettingsViewModel
 import com.android.axion.axpcmode.ui.components.ContextMenuState
 import com.android.axion.axpcmode.ui.components.taskbar.TaskPeekCard
@@ -105,6 +108,12 @@ class TaskbarPanelController(
 
         val qsEditorWidthPx = (849 * density).toInt()
 
+        // These panels are wider than the width a WRAP_CONTENT window settles on, so their
+        // windows are sized explicitly.
+        val quickSettingsWidthPx = (QuickSettingsOverlayWidth.value * density).toInt()
+        val notificationsWidthPx = (NotificationOverlayWidth.value * density).toInt()
+        val mediaPlayerWidthPx = (MediaPlayerOverlayWidth.value * density).toInt()
+
         scope.launch {
             vm.showStartMenu.collect { show ->
                 if (show) {
@@ -151,7 +160,7 @@ class TaskbarPanelController(
                                 id = "quick_settings",
                                 content = { OverlayQuickSettings(vm, qsViewModel) },
                                 gravity = Gravity.BOTTOM or Gravity.END,
-                                width = WindowManager.LayoutParams.WRAP_CONTENT,
+                                width = quickSettingsWidthPx,
                                 height = WindowManager.LayoutParams.WRAP_CONTENT,
                                 y = taskbarYOffsetPx,
                                 onOutsideClick = { vm.dismissAllPanels(fromOutside = true) },
@@ -172,7 +181,7 @@ class TaskbarPanelController(
                         id = "notifications",
                         content = { OverlayNotificationPanel(vm, calendarWeatherRepository) },
                         gravity = Gravity.BOTTOM or Gravity.END,
-                        width = WindowManager.LayoutParams.WRAP_CONTENT,
+                        width = notificationsWidthPx,
                         height = WindowManager.LayoutParams.WRAP_CONTENT,
                         y = taskbarYOffsetPx,
                         onOutsideClick = { vm.dismissAllPanels(fromOutside = true) },
@@ -190,7 +199,7 @@ class TaskbarPanelController(
                         id = "media_player",
                         content = { OverlayMediaPlayer(vm, mediaRepository) },
                         gravity = Gravity.BOTTOM or Gravity.END,
-                        width = WindowManager.LayoutParams.WRAP_CONTENT,
+                        width = mediaPlayerWidthPx,
                         height = WindowManager.LayoutParams.WRAP_CONTENT,
                         y = taskbarYOffsetPx,
                         onOutsideClick = { vm.dismissAllPanels(fromOutside = true) },

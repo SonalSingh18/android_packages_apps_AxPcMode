@@ -81,6 +81,9 @@ private object NotifScenes {
     val Expanded = SceneKey("NotifExpanded")
 }
 
+/** Footprint of the panel, trailing padding included; the overlay window is sized around it. */
+val NotificationPanelWidth = 360.dp
+
 private const val NOTIF_SPRING_STIFFNESS = 500f
 private const val NOTIF_SPRING_DAMPING = 0.9f
 
@@ -102,7 +105,7 @@ fun NotificationPanel(modifier: Modifier = Modifier) {
     Surface(
         modifier =
             modifier
-                .width(360.dp)
+                .width(NotificationPanelWidth)
                 .heightIn(max = safeMaxHeight)
                 .padding(top = 12.dp, bottom = 12.dp, end = 12.dp),
         shape = MaterialTheme.shapes.extraLarge,

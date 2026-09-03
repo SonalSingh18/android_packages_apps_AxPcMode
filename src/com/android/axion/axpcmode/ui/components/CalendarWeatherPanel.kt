@@ -46,6 +46,9 @@ import java.time.format.DateTimeFormatter
 import java.util.Date
 import java.util.Locale
 
+/** Footprint of the panel; the overlay window has to be sized around it. */
+val CalendarWeatherPanelWidth = 280.dp
+
 private val DAY_LABELS = listOf("S", "M", "T", "W", "T", "F", "S")
 private val MONTH_FORMATTER = DateTimeFormatter.ofPattern("MMMM yyyy")
 private val TIME_FORMAT = SimpleDateFormat("h:mm a", Locale.getDefault())
@@ -63,7 +66,7 @@ fun CalendarWeatherPanel(
     val today = remember { LocalDate.now() }
 
     Surface(
-        modifier = modifier.width(280.dp),
+        modifier = modifier.width(CalendarWeatherPanelWidth),
         shape = RoundedCornerShape(28.dp),
         color = MaterialTheme.colorScheme.surfaceContainer,
         shadowElevation = 8.dp,

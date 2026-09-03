@@ -23,12 +23,15 @@ import androidx.compose.ui.unit.dp
 import com.android.axion.axpcmode.services.MediaRepository
 import com.android.axion.axpcmode.services.MediaSessionData
 
+/** Footprint of the card; the overlay window is sized around it plus its padding. */
+val MediaPlayerCardWidth = 320.dp
+
 @Composable
 fun MediaPlayerCard(mediaRepository: MediaRepository, modifier: Modifier = Modifier) {
     val activeSession by mediaRepository.activeSession.collectAsState()
 
     Surface(
-        modifier = modifier.width(320.dp).height(120.dp),
+        modifier = modifier.width(MediaPlayerCardWidth).height(120.dp),
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceContainer,
         shadowElevation = 8.dp,

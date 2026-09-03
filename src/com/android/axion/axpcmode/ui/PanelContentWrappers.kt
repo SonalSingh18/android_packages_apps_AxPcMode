@@ -52,6 +52,19 @@ import com.android.axion.axpcmode.ui.windows.LocalTaskbarIconRegistry
 import com.android.axion.axpcmode.ui.windows.TaskbarIconRegistry
 import com.android.axion.axpcmode.utils.AppUtils
 
+/*
+ * A WRAP_CONTENT overlay window is measured against config_prefDialogWidth (320dp for the desktop
+ * configuration) first, and ComposeView never reports MEASURED_STATE_TOO_SMALL, so the window keeps
+ * that width and squeezes the panels inside it. The panel windows are given these widths instead.
+ */
+private val PanelEdgePadding = 12.dp
+private val NotificationPanelGap = 8.dp
+
+val NotificationOverlayWidth =
+    CalendarWeatherPanelWidth + NotificationPanelGap + NotificationPanelWidth + PanelEdgePadding
+val QuickSettingsOverlayWidth = QuickSettingsPanelWidth + PanelEdgePadding
+val MediaPlayerOverlayWidth = MediaPlayerCardWidth + PanelEdgePadding + PanelEdgePadding
+
 @Composable
 fun OverlayTaskbar(
     viewModel: PcModeLauncherViewModel,
@@ -203,7 +216,7 @@ fun OverlayQuickSettings(viewModel: PcModeLauncherViewModel, qsViewModel: QuickS
         ) {
             QuickSettingsPanel(
                 viewModel = qsViewModel,
-                modifier = Modifier.padding(top = 6.dp, bottom = 6.dp, end = 12.dp),
+                modifier = Modifier.padding(top = 6.dp, bottom = 6.dp, end = PanelEdgePadding),
                 targetDisplayId = LocalTargetDisplayId.current,
             )
         }
@@ -269,11 +282,11 @@ fun OverlayNotificationPanel(
         ) {
             Row(
                 verticalAlignment = Alignment.Bottom,
-                modifier = Modifier.padding(top = 6.dp, bottom = 6.dp, end = 12.dp),
+                modifier = Modifier.padding(top = 6.dp, bottom = 6.dp, end = PanelEdgePadding),
             ) {
                 CalendarWeatherPanel(
                     repository = calendarWeatherRepository,
-                    modifier = Modifier.padding(end = 8.dp),
+                    modifier = Modifier.padding(end = NotificationPanelGap),
                 )
                 NotificationPanel()
             }
@@ -292,7 +305,13 @@ fun OverlayMediaPlayer(viewModel: PcModeLauncherViewModel, mediaRepository: Medi
         ) {
             MediaPlayerCard(
                 mediaRepository = mediaRepository,
-                modifier = Modifier.padding(start = 12.dp, top = 6.dp, bottom = 6.dp, end = 12.dp),
+                modifier =
+                    Modifier.padding(
+                        start = PanelEdgePadding,
+                        top = 6.dp,
+                        bottom = 6.dp,
+                        end = PanelEdgePadding,
+                    ),
             )
         }
     }
