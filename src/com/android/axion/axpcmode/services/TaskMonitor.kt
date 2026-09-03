@@ -26,6 +26,7 @@ import android.util.Log
 import com.android.axion.axpcmode.di.Background
 import com.android.axion.axpcmode.di.IoScope
 import com.android.axion.axpcmode.utils.AppInfo
+import com.android.axion.axpcmode.utils.AppUtils
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -117,7 +118,7 @@ constructor(
                 val tasks = activityManager.getRunningTasks(50)
                 tasks.mapNotNull { task ->
                     val pkg = task.baseActivity?.packageName ?: return@mapNotNull null
-                    if (pkg == "com.android.axion.axpcmode" || pkg == "com.android.launcher3")
+                    if (pkg == context.packageName || pkg in AppUtils.getHomePackages(context))
                         return@mapNotNull null
 
                     try {

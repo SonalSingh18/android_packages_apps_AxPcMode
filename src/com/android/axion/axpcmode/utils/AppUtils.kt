@@ -25,6 +25,7 @@ import android.app.ActivityTaskManager
 import android.app.FreeformLauncher
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.UserHandle
@@ -45,6 +46,31 @@ private val Context.dataStore: DataStore<Preferences> by
 
 object AppUtils {
     private val PINNED_APPS_KEY = stringSetPreferencesKey("pinned_apps")
+
+    @Volatile private var homePackages: Set<String>? = null
+
+    /**
+     * Packages that can act as the system home surface, such as Pixel Launcher or Launcher3. PC
+     * mode is the desktop here, so their tasks never belong in the taskbar or the tasks overview
+     * even while one of them is in the foreground.
+     */
+    fun getHomePackages(context: Context): Set<String> {
+        homePackages?.let {
+            return it
+        }
+        val homeIntent = Intent(Intent.ACTION_MAIN).apply { addCategory(Intent.CATEGORY_HOME) }
+        val packages =
+            try {
+                context.packageManager
+                    .queryIntentActivities(homeIntent, PackageManager.MATCH_ALL)
+                    .mapTo(mutableSetOf()) { it.activityInfo.packageName }
+            } catch (e: Exception) {
+                Log.e("AppUtils", "Error resolving home packages", e)
+                mutableSetOf("com.google.android.apps.nexuslauncher", "com.android.launcher3")
+            }
+        homePackages = packages
+        return packages
+    }
 
     fun getInstalledApps(context: Context): List<AppInfo> {
         val pm = context.packageManager
@@ -199,7 +225,8 @@ object AppUtils {
             try {
                 val pkg = task.baseActivity?.packageName ?: return@mapNotNull null
 
-                if (pkg == context.packageName) return@mapNotNull null
+                if (pkg == context.packageName || pkg in getHomePackages(context))
+                    return@mapNotNull null
 
                 val appInfo = pm.getApplicationInfo(pkg, 0)
                 AppInfo(

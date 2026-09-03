@@ -152,9 +152,7 @@ class TasksOverviewActivity : ComponentActivity() {
     }
 
     private fun isLauncherPackage(packageName: String): Boolean {
-        return packageName == "com.android.launcher3" ||
-            packageName == "com.google.android.apps.nexuslauncher" ||
-            packageName.contains("launcher")
+        return packageName in AppUtils.getHomePackages(this)
     }
 
     private fun bringTaskToFront(appInfo: AppInfo) {
