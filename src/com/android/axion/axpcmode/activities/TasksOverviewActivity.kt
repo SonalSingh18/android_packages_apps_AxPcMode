@@ -35,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.android.axion.axpcmode.services.DesktopWallpaperRepository
 import com.android.axion.axpcmode.services.SecondaryTaskbarService
 import com.android.axion.axpcmode.services.TaskbarService
 import com.android.axion.axpcmode.ui.components.TasksOverviewPanel
@@ -42,8 +43,13 @@ import com.android.axion.axpcmode.ui.theme.AxPcModeTheme
 import com.android.axion.axpcmode.utils.AppInfo
 import com.android.axion.axpcmode.utils.AppUtils
 import com.android.axion.axpcmode.utils.TaskbarConstants
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
-class TasksOverviewActivity : ComponentActivity() {
+@AndroidEntryPoint(ComponentActivity::class)
+class TasksOverviewActivity : Hilt_TasksOverviewActivity() {
+
+    @Inject lateinit var wallpaperRepo: DesktopWallpaperRepository
 
     private val targetDisplayId: Int
         get() = display?.displayId ?: Display.DEFAULT_DISPLAY
@@ -61,6 +67,7 @@ class TasksOverviewActivity : ComponentActivity() {
 
         setContent {
             val runningTasks = remember { loadRunningTasks() }
+            val wallpaperBitmap by wallpaperRepo.wallpaperBitmap.collectAsState()
 
             val tasksWithDesktop =
                 remember(runningTasks) {
@@ -86,6 +93,7 @@ class TasksOverviewActivity : ComponentActivity() {
                 TasksOverviewPanel(
                     windows = emptyList(),
                     runningTasks = tasksWithDesktop,
+                    wallpaperBitmap = wallpaperBitmap,
                     onTaskClick = {},
                     onRunningTaskClick = { appInfo ->
                         if (appInfo.taskId == -2) {

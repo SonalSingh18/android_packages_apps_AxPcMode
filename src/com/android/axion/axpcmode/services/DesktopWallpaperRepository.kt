@@ -16,18 +16,17 @@
 
 package com.android.axion.axpcmode.services
 
-import android.app.WallpaperManager
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Log
-import androidx.core.graphics.drawable.toBitmap
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.android.axion.axpcmode.R
 import com.android.axion.axpcmode.di.IoScope
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
@@ -99,16 +98,20 @@ class DesktopWallpaperRepository @Inject constructor(
                 Log.w(TAG, "Failed to load custom wallpaper", e)
             }
         }
-        loadSystemWallpaper()
+        loadDefaultWallpaper()
     }
 
-    private fun loadSystemWallpaper() {
+    private fun loadDefaultWallpaper() {
         try {
-            WallpaperManager.getInstance(context).drawable?.let { drawable ->
-                _wallpaperBitmap.value = drawable.toBitmap()
+            BitmapFactory.decodeResource(
+                context.resources,
+                R.drawable.pc_default_wallpaper,
+                BitmapFactory.Options().apply { inScaled = false },
+            )?.let { bitmap ->
+                _wallpaperBitmap.value = bitmap
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Failed to load system wallpaper", e)
+            Log.w(TAG, "Failed to load default wallpaper", e)
         }
         _hasCustomWallpaper.value = false
     }
@@ -137,7 +140,7 @@ class DesktopWallpaperRepository @Inject constructor(
         ioScope.launch {
             try {
                 File(context.filesDir, PC_WALLPAPER_FILE).delete()
-                loadSystemWallpaper()
+                loadDefaultWallpaper()
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to remove wallpaper", e)
             }

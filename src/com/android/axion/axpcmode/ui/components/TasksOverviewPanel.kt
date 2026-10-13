@@ -16,7 +16,6 @@
 
 package com.android.axion.axpcmode.ui.components
 
-import android.app.WallpaperManager
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.util.Log
@@ -68,6 +67,7 @@ import com.android.axion.axpcmode.R
 fun TasksOverviewPanel(
     windows: List<WindowState>,
     runningTasks: List<AppInfo> = emptyList(),
+    wallpaperBitmap: Bitmap? = null,
     onTaskClick: (WindowState) -> Unit,
     onRunningTaskClick: (AppInfo) -> Unit = {},
     onTaskClose: (AppInfo) -> Unit = {},
@@ -79,15 +79,6 @@ fun TasksOverviewPanel(
     val configuration = LocalConfiguration.current
     val screenWidthDp = configuration.screenWidthDp.dp
     val screenHeightDp = configuration.screenHeightDp.dp
-
-    var wallpaperBitmap by remember { mutableStateOf<Bitmap?>(null) }
-    LaunchedEffect(Unit) {
-        val wallpaperManager = WallpaperManager.getInstance(context)
-        val drawable = wallpaperManager.drawable
-        if (drawable != null) {
-            wallpaperBitmap = drawable.toBitmap()
-        }
-    }
 
     val taskSnapshots = remember { mutableStateMapOf<Int, Bitmap?>() }
     LaunchedEffect(runningTasks) {
@@ -154,7 +145,7 @@ fun TasksOverviewPanel(
         ) {
             if (wallpaperBitmap != null) {
                 Image(
-                    bitmap = wallpaperBitmap!!.asImageBitmap(),
+                    bitmap = wallpaperBitmap.asImageBitmap(),
                     contentDescription = stringResource(R.string.desktop_wallpaper_desc),
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize(),
